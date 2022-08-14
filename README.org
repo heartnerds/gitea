@@ -1,4 +1,4 @@
-* Gitea
+#+TITLE: Gitea
 
 * Nginx Setup
 [[https://gitlab.com/Mageas/certginx][Certginx]] is used for simplicity.
