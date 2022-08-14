@@ -1,0 +1,48 @@
+* Gitea
+
+* Nginx Setup
+[Certginx](https://gitlab.com/Mageas/certginx) is used for simplicity.
+
+Copy *nginx.conf* to *./nginx/conf.d/subdomain.domain.com.conf* in the [Certginx](https://gitlab.com/Mageas/certginx) directory.
+
+Then follow the steps [here](https://gitlab.com/Mageas/certginx).
+
+* Docker Setup
+** Informations
+| User   | Username |
+|--------+----------|
+| Host   | gitea    |
+| Docker | git      |
+
+** Key & Token
+Generate new secrets/tokens.
+#+BEGIN_SRC
+sed -i -e 's/gitea_secret_key/'"$(docker run -it --rm gitea/gitea:1 gitea generate secret SECRET_KEY)"'/g' docker-compose.yml
+sed -i -e 's/gitea_internal_token/'"$(docker run -it --rm gitea/gitea:1 gitea generate secret INTERNAL_TOKEN)"'/g' docker-compose.yml
+#+END_SRC
+
+** SSH Container Passthrough
+Generate the SSH key pars.
+#+BEGIN_SRC
+sudo -u gitea ssh-keygen -t rsa -b 4096 -C "Gitea Host Key"
+#+END_SRC
+
+Configure the SSH folder.
+#+BEGIN_SRC
+sudo -u gitea cat /home/gitea/.ssh/id_rsa.pub | sudo -u gitea tee -a /home/gitea/.ssh/authorized_keys
+sudo chmod 600 /home/gitea/.ssh/authorized_keys
+#+END_SRC
+
+Script for SSH passthrough
+#+BEGIN_SRC
+cat <<"EOF" | sudo tee /usr/local/bin/gitea
+#!/bin/sh
+ssh -p 2222 -o StrictHostKeyChecking=no git@127.0.0.1 "SSH_ORIGINAL_COMMAND=\"$SSH_ORIGINAL_COMMAND\" $0 $@"
+EOF
+sudo chmod +x /usr/local/bin/gitea
+#+END_SRC
+
+
+curl -s https://api.github.com/repos/docker/compose/releases/latest | grep browser_download_url  | grep docker-compose-linux-x86_64 | cut -d '"' -f 4 | wget -qi -
+chmod +x docker-compose-linux-x86_64
+mv docker-compose-linux-x86_64 /usr/local/bin/docker-compose
