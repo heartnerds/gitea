@@ -96,6 +96,9 @@ GPG_EMAILS=(
 
 DUMPS_DIR="/home/gitea/gitea/dumps"
 SHARE_DIR="/home/gitea-shared"
+BACKUP_DURATION_IN_DAYS=28
+
+find ${SHARE_DIR} -type f -mtime +${BACKUP_DURATION_IN_DAYS} -delete
 
 echo "[$(date '+%Y-%m-%d %H:%M')] Dumping Gitea.."
 docker exec -u git -it -w /tmp $(docker ps -qf 'name=^gitea$') bash -c '/usr/local/bin/gitea dump -c /data/gitea/conf/app.ini' &>/dev/null || exit 1
@@ -111,8 +114,6 @@ for file in "${DUMPS_DIR}"/*; do
 done
 echo "[$(date '+%Y-%m-%d %H:%M')] Backup completed"
 #+END_SRC
-
-#+RESULTS:
 
 * Documentation
 - https://docs.gitea.io/en-us/
