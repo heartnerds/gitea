@@ -16,25 +16,25 @@ Then follow the steps [[https://gitlab.com/Mageas/certginx][here]].
 
 ** Key & Token
 Generate new secrets/tokens.
-#+BEGIN_SRC
+#+BEGIN_SRC sh
 sed -i -e 's/gitea_secret_key/'"$(docker run -it --rm gitea/gitea:1 gitea generate secret SECRET_KEY)"'/g' docker-compose.yml
 sed -i -e 's/gitea_internal_token/'"$(docker run -it --rm gitea/gitea:1 gitea generate secret INTERNAL_TOKEN)"'/g' docker-compose.yml
 #+END_SRC
 
 ** SSH Container Passthrough
 Generate the SSH key pars.
-#+BEGIN_SRC
+#+BEGIN_SRC sh
 sudo -u gitea ssh-keygen -t rsa -b 4096 -C "Gitea Host Key"
 #+END_SRC
 
 Configure the SSH folder.
-#+BEGIN_SRC
+#+BEGIN_SRC sh
 sudo -u gitea cat /home/gitea/.ssh/id_rsa.pub | sudo -u gitea tee -a /home/gitea/.ssh/authorized_keys
 sudo chmod 600 /home/gitea/.ssh/authorized_keys
 #+END_SRC
 
 Script for SSH passthrough
-#+BEGIN_SRC
+#+BEGIN_SRC sh
 cat <<"EOF" | sudo tee /usr/local/bin/gitea
 #!/bin/sh
 ssh -p 2222 -o StrictHostKeyChecking=no git@127.0.0.1 "SSH_ORIGINAL_COMMAND=\"$SSH_ORIGINAL_COMMAND\" $0 $@"
@@ -43,9 +43,76 @@ sudo chmod +x /usr/local/bin/gitea
 #+END_SRC
 
 * Docker Backup
-#+BEGIN_SRC
+** Dump
+#+BEGIN_SRC sh
 docker exec -u git -it -w /tmp $(docker ps -qf 'name=^gitea$') bash -c '/usr/local/bin/gitea dump -c /data/gitea/conf/app.ini'
 #+END_SRC
+
+** Share
+Create the shared directory.
+#+BEGIN_SRC sh
+mkdir /home/gitea-shared
+#+END_SRC
+
+Add the shared group.
+#+BEGIN_SRC sh
+addgroup gitea-shared
+#+END_SRC
+
+Update the permissions of the shared directory for the group.
+#+BEGIN_SRC sh
+chown :gitea-shared /home/gitea-shared
+#+END_SRC
+
+Add the users to the shared group *(Duplicate this for the other user)*.
+#+BEGIN_SRC sh
+usermod -aG gitea-shared gitea
+#+END_SRC
+
+Update the permissions of the shared directory
+#+BEGIN_SRC sh
+chmod 1770 /home/gitea-shared
+#+END_SRC
+
+** Sharing the Dump
+Update the permission of the file
+#+BEGIN_SRC sh
+chown :gitea-shared /path/to/your/dumps.zip
+#+END_SRC
+
+Move the file to your shared directory
+#+BEGIN_SRC sh
+cp /home/gitea/gitea/dumps/* /home/gitea-shared
+#+END_SRC
+
+** Script
+Automation for the Dumping, encrypt the dumped file with gpg, then move the encrypted file to the shared directory.
+#+BEGIN_SRC sh
+#!/bin/bash
+GPG_EMAILS=(
+    "example1@mail.net"
+    "example2@mail.net"
+)
+
+DUMPS_DIR="/home/gitea/gitea/dumps"
+SHARE_DIR="/home/gitea-shared"
+
+echo "[$(date '+%Y-%m-%d %H:%M')] Dumping Gitea.."
+docker exec -u git -it -w /tmp $(docker ps -qf 'name=^gitea$') bash -c '/usr/local/bin/gitea dump -c /data/gitea/conf/app.ini' &>/dev/null || exit 1
+
+for file in "${DUMPS_DIR}"/*; do
+    file="${file##*/}"
+    for email in "${GPG_EMAILS[@]}"; do
+        echo "[$(date '+%Y-%m-%d %H:%M')] Encrypting '${file}' for ${email}"
+        gpg -r ${email} -o "${SHARE_DIR}/${email}:${file}.gpg" -e "${DUMPS_DIR}/${file}" || exit 1
+        chown :gitea-shared "${SHARE_DIR}/${email}:${file}.gpg" || exit 1
+    done
+    rm -r "${DUMPS_DIR}/${file}" || exit 1
+done
+echo "[$(date '+%Y-%m-%d %H:%M')] Backup completed"
+#+END_SRC
+
+#+RESULTS:
 
 * Documentation
 - https://docs.gitea.io/en-us/
