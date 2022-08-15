@@ -26,6 +26,7 @@ services:
     volumes:
       - /home/gitea/.ssh/:/data/git/.ssh
       - ./themes/:/data/gitea/public/css/:ro
+      - ./dumps/:/tmp/
       - gitea:/data
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
