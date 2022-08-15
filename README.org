@@ -41,3 +41,11 @@ ssh -p 2222 -o StrictHostKeyChecking=no git@127.0.0.1 "SSH_ORIGINAL_COMMAND=\"$S
 EOF
 sudo chmod +x /usr/local/bin/gitea
 #+END_SRC
+
+* Docker Backup
+#+BEGIN_SRC
+docker exec -u git -it -w /tmp $(docker ps -qf 'name=^gitea$') bash -c '/usr/local/bin/gitea dump -c /data/gitea/conf/app.ini'
+#+END_SRC
+
+* Documentation
+- https://docs.gitea.io/en-us/
