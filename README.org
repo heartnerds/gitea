@@ -115,5 +115,29 @@ done
 echo "[$(date '+%Y-%m-%d %H:%M')] Backup completed"
 #+END_SRC
 
+* Security (fail2ban)
+Add */etc/fail2ban/jail.local*:
+#+BEGIN_SRC
+[gitea]
+enabled = true
+port = 80,443
+filter = gitea
+action = iptables-allports[chain="FORWARD"]
+logpath = /var/lib/docker/volumes/gitea_gitea/_data/gitea/log/gitea.log
+maxretry = 6
+bantime = 30m
+findtime = 10m
+#+END_SRC
+
+Create */etc/fail2ban/filter.d/gitea.local*:
+#+BEGIN_SRC
+[INCLUDES]
+before = common.conf
+
+[Definition]
+failregex =  .*(Failed authentication attempt|invalid credentials|Attempted access of unknown user).* from <HOST>
+ignoreregex =
+#+END_SRC
+
 * Documentation
 - https://docs.gitea.io/en-us/
