@@ -1,11 +1,11 @@
 #+TITLE: Gitea
 
 * Nginx Setup
-[[https://gitlab.com/Mageas/certginx][Certginx]] is used for simplicity.
+[[https://github.com/heartnerds/certginx][Certginx]] is used for simplicity.
 
-Copy *nginx.conf* to *./nginx/conf.d/subdomain.domain.com.conf* in the [[https://gitlab.com/Mageas/certginx][Certginx]] directory.
+Copy *nginx.conf* to *./nginx/conf.d/subdomain.domain.com.conf* in the [[https://github.com/heartnerds/certginx][Certginx]] directory.
 
-Then follow the steps [[https://gitlab.com/Mageas/certginx][here]].
+Then follow the steps [[https://github.com/heartnerds/certginx][here]].
 
 * Docker Setup
 ** Informations
