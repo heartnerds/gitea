@@ -107,8 +107,8 @@ for file in "${DUMPS_DIR}"/*; do
     file="${file##*/}"
     for email in "${GPG_EMAILS[@]}"; do
         echo "[$(date '+%Y-%m-%d %H:%M')] Encrypting '${file}' for ${email}"
-        gpg -r ${email} -o "${SHARE_DIR}/${email}:${file}.gpg" -e "${DUMPS_DIR}/${file}" || exit 1
-        chown :gitea-shared "${SHARE_DIR}/${email}:${file}.gpg" || exit 1
+        gpg -r ${email} -o "${SHARE_DIR}/${email}_${file}.gpg" -e "${DUMPS_DIR}/${file}" || exit 1
+        chown :gitea-shared "${SHARE_DIR}/${email}_${file}.gpg" || exit 1
     done
     rm -r "${DUMPS_DIR}/${file}" || exit 1
 done
