@@ -96,9 +96,8 @@ GPG_EMAILS=(
 
 DUMPS_DIR="/home/gitea/gitea/dumps"
 SHARE_DIR="/home/gitea-shared"
-BACKUP_DURATION_IN_DAYS=28
 
-find ${SHARE_DIR} -type f -mtime +${BACKUP_DURATION_IN_DAYS} -delete
+mkdir -p "${DUMPS_DIR}"
 
 echo "[$(date '+%Y-%m-%d %H:%M')] Dumping Gitea.."
 docker exec -u git -it -w /tmp $(docker ps -qf 'name=^gitea$') bash -c '/usr/local/bin/gitea dump -c /data/gitea/conf/app.ini' &>/dev/null || exit 1
@@ -107,11 +106,12 @@ for file in "${DUMPS_DIR}"/*; do
     file="${file##*/}"
     for email in "${GPG_EMAILS[@]}"; do
         echo "[$(date '+%Y-%m-%d %H:%M')] Encrypting '${file}' for ${email}"
-        gpg -r ${email} -o "${SHARE_DIR}/${email}_${file}.gpg" -e "${DUMPS_DIR}/${file}" || exit 1
-        chown :gitea-shared "${SHARE_DIR}/${email}_${file}.gpg" || exit 1
+	gpg -r ${email} -o "${SHARE_DIR}/${email}_${file}.gpg" -e "${DUMPS_DIR}/${file}" || exit 1
+	chown :gitea-shared "${SHARE_DIR}/${email}_${file}.gpg" || exit 1
     done
     rm -r "${DUMPS_DIR}/${file}" || exit 1
 done
+rm -r "${DUMPS_DIR}"
 echo "[$(date '+%Y-%m-%d %H:%M')] Backup completed"
 #+END_SRC
 
